@@ -22,6 +22,7 @@ let uptimeInterval = null;
 let serviceOptions = [];
 let ideas = [];
 let currentIdeaFilter = 'all';
+let companies = [];
 
 // Initialize
 async function init() {
@@ -75,6 +76,7 @@ async function showApp() {
   loadServiceOptions();
   loadNotifications();
   loadIdeas();
+  loadCompanies();
   showSection('dashboard');
   // Initial uptime check + auto-refresh every 30min
   checkAllUptimeSilent();
@@ -233,7 +235,8 @@ function showSection(section) {
     insights: ['Insights', 'Análises inteligentes'],
     uptime: ['Uptime', 'Monitor de disponibilidade'],
     proposals: ['Propostas', 'Orçamentos profissionais'],
-    ideas: ['Ideias', 'Pipeline de oportunidades futuras']
+    ideas: ['Ideias', 'Pipeline de oportunidades futuras'],
+    companies: ['Minhas Empresas', 'Gerencie e unifique suas empresas']
   };
   
   document.getElementById('pageTitle').textContent = titles[section][0];
@@ -259,6 +262,9 @@ function showSection(section) {
   }
   if (section === 'ideas') {
     renderIdeas();
+  }
+  if (section === 'companies') {
+    renderCompanies();
   }
 }
 
@@ -3313,6 +3319,173 @@ function renderIdeasStats() {
   `;
 }
 
+// ========== COMPANIES ==========
+
+function loadCompanies() {
+  try {
+    const saved = localStorage.getItem('sitemanager_companies');
+    if (saved) companies = JSON.parse(saved);
+  } catch(e) {}
+}
+
+function saveCompaniesStorage() {
+  try { localStorage.setItem('sitemanager_companies', JSON.stringify(companies)); } catch(e) {}
+}
+
+function openCompanyModal(editId) {
+  document.getElementById('companyId').value = '';
+  document.getElementById('companyName').value = '';
+  document.getElementById('companyDescription').value = '';
+  document.getElementById('companyColor').value = 'accent-primary';
+  document.getElementById('companyIcon').value = 'building-2';
+  document.getElementById('companyUrl').value = '';
+  document.getElementById('companyRevenue').value = '';
+  document.getElementById('companyExpenses').value = '';
+  document.getElementById('companyClients').value = '';
+  document.getElementById('companyProjects').value = '';
+  document.getElementById('companyNotes').value = '';
+  document.getElementById('companyIsCurrent').checked = false;
+  document.getElementById('companyModalTitle').textContent = 'Nova Empresa';
+
+  if (editId) {
+    const c = companies.find(x => x.id === editId);
+    if (c) {
+      document.getElementById('companyId').value = c.id;
+      document.getElementById('companyName').value = c.name;
+      document.getElementById('companyDescription').value = c.description || '';
+      document.getElementById('companyColor').value = c.color || 'accent-primary';
+      document.getElementById('companyIcon').value = c.icon || 'building-2';
+      document.getElementById('companyUrl').value = c.url || '';
+      document.getElementById('companyRevenue').value = c.revenue || '';
+      document.getElementById('companyExpenses').value = c.expenses || '';
+      document.getElementById('companyClients').value = c.clientCount || '';
+      document.getElementById('companyProjects').value = c.projectCount || '';
+      document.getElementById('companyNotes').value = c.notes || '';
+      document.getElementById('companyIsCurrent').checked = c.isCurrent || false;
+      document.getElementById('companyModalTitle').textContent = 'Editar Empresa';
+    }
+  }
+
+  document.getElementById('companyModal').classList.remove('hidden');
+  lucide.createIcons();
+}
+
+function saveCompany(event) {
+  event.preventDefault();
+  const id = document.getElementById('companyId').value;
+  const isCurrent = document.getElementById('companyIsCurrent').checked;
+  const now = new Date().toISOString();
+
+  const data = {
+    id: id || Date.now().toString(),
+    name: document.getElementById('companyName').value.trim(),
+    description: document.getElementById('companyDescription').value.trim(),
+    color: document.getElementById('companyColor').value,
+    icon: document.getElementById('companyIcon').value,
+    url: document.getElementById('companyUrl').value.trim(),
+    revenue: parseFloat(document.getElementById('companyRevenue').value) || 0,
+    expenses: parseFloat(document.getElementById('companyExpenses').value) || 0,
+    clientCount: parseInt(document.getElementById('companyClients').value) || 0,
+    projectCount: parseInt(document.getElementById('companyProjects').value) || 0,
+    notes: document.getElementById('companyNotes').value.trim(),
+    isCurrent: isCurrent,
+    createdAt: id ? (companies.find(x => x.id === id)?.createdAt || now) : now,
+    updatedAt: now
+  };
+
+  // If marking as current, update its financials from real data
+  if (isCurrent) {
+    companies.forEach(c => c.isCurrent = false);
+  }
+
+  if (id) {
+    const idx = companies.findIndex(x => x.id === id);
+    if (idx >= 0) companies[idx] = data;
+  } else {
+    companies.unshift(data);
+  }
+
+  saveCompaniesStorage();
+  closeModal('companyModal');
+  if (currentSection === 'companies') renderCompanies();
+  showToast('success', 'Salvo', 'Empresa salva com sucesso!');
+}
+
+function deleteCompany(id) {
+  companies = companies.filter(c => c.id !== id);
+  saveCompaniesStorage();
+  renderCompanies();
+  showToast('success', 'Excluída', 'Empresa removida!');
+}
+
+function renderCompanies() {
+  renderCompanyCards();
+}
+
+function renderCompanyCards() {
+  const grid = document.getElementById('companiesGrid');
+  if (!grid) return;
+
+  if (companies.length === 0) {
+    grid.innerHTML = '<div class="glass rounded-xl p-8 text-center text-gray-500 col-span-full">Nenhuma empresa cadastrada. Clique em "Nova Empresa" para começar.</div>';
+    return;
+  }
+
+  grid.innerHTML = companies.map(c => {
+    const profit = (c.revenue || 0) - (c.expenses || 0);
+    const margin = c.revenue > 0 ? ((profit / c.revenue) * 100).toFixed(1) : '0.0';
+    const color = c.color || 'accent-primary';
+    const icon = c.icon || 'building-2';
+
+    return `
+      <div class="glass rounded-xl p-4 sm:p-5 hover:border-${color}/30 transition-all group">
+        <div class="flex items-start justify-between mb-3">
+          <div class="w-11 h-11 rounded-xl bg-${color}/20 flex items-center justify-center">
+            <i data-lucide="${icon}" class="w-5 h-5 text-${color}"></i>
+          </div>
+          <div class="flex items-center gap-1">
+            ${c.isCurrent ? '<span class="text-[10px] bg-accent-success/20 text-accent-success px-1.5 py-0.5 rounded-full">Atual</span>' : ''}
+            ${c.url ? `<a href="${c.url}" target="_blank" rel="noopener noreferrer" class="p-1.5 hover:bg-dark-600 rounded-lg text-gray-400 hover:text-accent-primary transition-colors" title="Abrir site"><i data-lucide="external-link" class="w-3.5 h-3.5"></i></a>` : ''}
+          </div>
+        </div>
+        <h4 class="font-semibold text-sm mb-0.5">${c.name}</h4>
+        <p class="text-xs text-gray-500 mb-3">${c.description || 'Sem descrição'}</p>
+        <div class="grid grid-cols-2 gap-2 mb-3">
+          <div class="bg-dark-700/50 rounded-lg p-2">
+            <p class="text-[10px] text-gray-500">Receita</p>
+            <p class="text-xs font-semibold text-accent-success">${formatCurrency(c.revenue || 0)}</p>
+          </div>
+          <div class="bg-dark-700/50 rounded-lg p-2">
+            <p class="text-[10px] text-gray-500">Despesas</p>
+            <p class="text-xs font-semibold text-accent-danger">${formatCurrency(c.expenses || 0)}</p>
+          </div>
+          <div class="bg-dark-700/50 rounded-lg p-2">
+            <p class="text-[10px] text-gray-500">Lucro</p>
+            <p class="text-xs font-semibold ${profit >= 0 ? 'text-accent-success' : 'text-accent-danger'}">${formatCurrency(profit)}</p>
+          </div>
+          <div class="bg-dark-700/50 rounded-lg p-2">
+            <p class="text-[10px] text-gray-500">Margem</p>
+            <p class="text-xs font-semibold">${margin}%</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-3 text-[10px] text-gray-500 mb-3">
+          <span><i data-lucide="users" class="w-3 h-3 inline"></i> ${c.clientCount || 0} clientes</span>
+          <span><i data-lucide="folder" class="w-3 h-3 inline"></i> ${c.projectCount || 0} projetos</span>
+        </div>
+        ${c.url ? `<a href="${c.url}" target="_blank" rel="noopener noreferrer" class="block w-full text-center text-xs bg-${color}/20 text-${color} hover:bg-${color}/30 px-3 py-2 rounded-lg transition-colors mb-2"><i data-lucide="external-link" class="w-3 h-3 inline mr-1"></i> Abrir Dashboard</a>` : ''}
+        <div class="flex gap-1.5 pt-2 border-t border-dark-600">
+          <button onclick="openCompanyModal('${c.id}')" class="flex items-center gap-1 text-xs bg-accent-primary/20 text-accent-primary hover:bg-accent-primary/30 px-2.5 py-1.5 rounded-lg transition-colors">
+            <i data-lucide="pencil" class="w-3 h-3"></i> Editar
+          </button>
+          <button onclick="deleteCompany('${c.id}')" class="flex items-center gap-1 text-xs bg-dark-700 text-gray-400 hover:bg-accent-danger/20 hover:text-accent-danger px-2.5 py-1.5 rounded-lg transition-colors ml-auto">
+            <i data-lucide="trash-2" class="w-3 h-3"></i>
+          </button>
+        </div>
+      </div>`;
+  }).join('');
+  lucide.createIcons();
+}
+
 // Initialize - define showSection first so onclick handlers work
 window.showSection = showSection;
 window.openModal = openModal;
@@ -3369,6 +3542,9 @@ window.saveIdea = saveIdea;
 window.deleteIdea = deleteIdea;
 window.executeIdea = executeIdea;
 window.filterIdeas = filterIdeas;
+window.openCompanyModal = openCompanyModal;
+window.saveCompany = saveCompany;
+window.deleteCompany = deleteCompany;
 
 // Close notification panel when clicking outside
 document.addEventListener('click', (e) => {
