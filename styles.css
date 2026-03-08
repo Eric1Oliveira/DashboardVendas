@@ -1,0 +1,140 @@
+* { font-family: 'Plus Jakarta Sans', sans-serif; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #1a1a25; }
+::-webkit-scrollbar-thumb { background: #32324a; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #6366f1; }
+.glass { background: rgba(26, 26, 37, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(99, 102, 241, 0.1); }
+.gradient-border { background: linear-gradient(135deg, rgba(99, 102, 241, 0.3), rgba(139, 92, 246, 0.1)); }
+.stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(99, 102, 241, 0.2); }
+.pulse-dot { animation: pulse 2s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+.fade-in { animation: fadeIn 0.3s ease-out; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+body { box-sizing: border-box; }
+
+/* Sidebar open state on mobile */
+#sidebar.sidebar-open {
+  transform: translateX(0);
+}
+
+/* Responsive scrollbar */
+.overflow-x-auto::-webkit-scrollbar { height: 4px; }
+
+/* Mobile modals - full screen sheet style */
+@media (max-width: 639px) {
+  #clientModal > div,
+  #projectModal > div,
+  #transactionModal > div,
+  #subscriptionModal > div,
+  #costModal > div {
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: 0;
+    height: 100%;
+    overflow-y: auto;
+  }
+  #clientModal,
+  #projectModal,
+  #transactionModal,
+  #subscriptionModal,
+  #costModal {
+    padding: 0;
+  }
+  /* Compact modal form fields */
+  #clientModal input,
+  #clientModal textarea,
+  #clientModal select,
+  #projectModal input,
+  #projectModal textarea,
+  #projectModal select,
+  #transactionModal input,
+  #transactionModal select,
+  #subscriptionModal input,
+  #subscriptionModal select,
+  #costModal input,
+  #costModal select,
+  #schemaEdit input,
+  #schemaEdit textarea,
+  #schemaEdit select {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    font-size: 0.875rem;
+  }
+  #clientModal .p-6,
+  #projectModal .p-6,
+  #transactionModal .p-6,
+  #subscriptionModal .p-6,
+  #costModal .p-6 {
+    padding: 1rem;
+  }
+  #clientModal .space-y-4 > div,
+  #projectModal .space-y-4 > div,
+  #transactionModal .space-y-4 > div,
+  #subscriptionModal .space-y-4 > div,
+  #costModal .space-y-4 > div {
+    margin-bottom: 0.5rem;
+  }
+}
+
+/* Schema visual styles */
+.schema-node-center {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.08));
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  min-width: 200px;
+}
+.schema-branch {
+  animation: fadeIn 0.4s ease-out;
+  animation-fill-mode: both;
+}
+.schema-branch:nth-child(1) { animation-delay: 0.05s; }
+.schema-branch:nth-child(2) { animation-delay: 0.1s; }
+.schema-branch:nth-child(3) { animation-delay: 0.15s; }
+.schema-branch:nth-child(4) { animation-delay: 0.2s; }
+
+/* Kanban drag-over highlight */
+.kanban-drag-over {
+  outline: 2px solid rgba(99, 102, 241, 0.5);
+  outline-offset: -2px;
+  border-radius: 12px;
+}
+.kanban-drag-over .kanban-drop-zone {
+  background: rgba(99, 102, 241, 0.06) !important;
+  border-color: rgba(99, 102, 241, 0.3) !important;
+}
+.kanban-touch-over {
+  outline: 2px solid rgba(99, 102, 241, 0.5);
+  outline-offset: -2px;
+  background: rgba(99, 102, 241, 0.08);
+  border-radius: 12px;
+}
+.kanban-touch-over .kanban-drop-zone {
+  background: rgba(99, 102, 241, 0.06) !important;
+}
+.kanban-card {
+  background: rgba(26, 26, 37, 0.7);
+  backdrop-filter: blur(4px);
+}
+.kanban-card:hover {
+  background: rgba(32, 32, 48, 0.9);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+.kanban-card:active {
+  transform: scale(0.97);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Print styles */
+@media print {
+  body { background: white !important; color: #1a1a2e !important; }
+  .glass { background: #f8f9fa !important; border: 1px solid #e5e7eb !important; }
+  .print-area { box-shadow: none !important; }
+}
+
+/* Changelog timeline animation */
+#changelogTimeline > div { animation: fadeIn 0.3s ease-out; animation-fill-mode: both; }
+#changelogTimeline > div:nth-child(1) { animation-delay: 0.05s; }
+#changelogTimeline > div:nth-child(2) { animation-delay: 0.1s; }
+#changelogTimeline > div:nth-child(3) { animation-delay: 0.15s; }
+#changelogTimeline > div:nth-child(4) { animation-delay: 0.2s; }
+#changelogTimeline > div:nth-child(5) { animation-delay: 0.25s; }
