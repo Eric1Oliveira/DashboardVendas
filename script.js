@@ -2668,12 +2668,14 @@ function saveServiceOptions() {
 function addServiceOption() {
   const name = document.getElementById('newServiceName')?.value?.trim();
   const price = parseFloat(document.getElementById('newServicePrice')?.value) || 0;
+  const billing = document.getElementById('newServiceBilling')?.value || 'unique';
   if (!name) { showToast('error', 'Erro', 'Digite o nome do serviço.'); return; }
 
-  serviceOptions.push({ id: Date.now().toString(), name, price });
+  serviceOptions.push({ id: Date.now().toString(), name, price, billing });
   saveServiceOptions();
   document.getElementById('newServiceName').value = '';
   document.getElementById('newServicePrice').value = '';
+  document.getElementById('newServiceBilling').value = 'unique';
   renderProposalItems();
 }
 
@@ -2688,7 +2690,7 @@ function toggleProposalService(serviceId, checked) {
   if (checked) {
     const svc = serviceOptions.find(s => s.id === serviceId);
     if (svc && !proposalItems.find(pi => pi.serviceId === serviceId)) {
-      proposalItems.push({ serviceId, description: svc.name, quantity: 1, price: svc.price });
+      proposalItems.push({ serviceId, description: svc.name, quantity: 1, price: svc.price, billing: svc.billing || 'unique' });
     }
   } else {
     proposalItems = proposalItems.filter(pi => pi.serviceId !== serviceId);
@@ -2852,11 +2854,17 @@ function updateProposalTotal() {
 
 function renderProposalItems() {
   const container = document.getElementById('proposalItems');
+  const billingLabels = { unique: 'Único', monthly: 'Mensal', hourly: 'Hora' };
   
   // Add new service input
   let html = `
-    <div class="flex items-center gap-2 mb-3 pb-3 border-b border-dark-600">
+    <div class="flex items-center gap-2 mb-3 pb-3 border-b border-dark-600 flex-wrap sm:flex-nowrap">
       <input type="text" id="newServiceName" placeholder="Nome do serviço" class="flex-1 bg-dark-700 border border-dark-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent-primary min-w-0">
+      <select id="newServiceBilling" class="bg-dark-700 border border-dark-600 rounded-lg px-2 py-2 text-sm focus:outline-none focus:border-accent-primary w-24">
+        <option value="unique">Único</option>
+        <option value="monthly">Mensal</option>
+        <option value="hourly">Hora</option>
+      </select>
       <input type="number" id="newServicePrice" step="0.01" placeholder="Preço" class="w-24 bg-dark-700 border border-dark-600 rounded-lg px-2 py-2 text-sm text-right focus:outline-none focus:border-accent-primary">
       <button onclick="addServiceOption()" class="p-2 bg-accent-primary/20 text-accent-primary hover:bg-accent-primary/30 rounded-lg transition-colors"><i data-lucide="plus" class="w-4 h-4"></i></button>
     </div>`;
@@ -2867,10 +2875,13 @@ function renderProposalItems() {
     html += serviceOptions.map(svc => {
       const isChecked = proposalItems.some(pi => pi.serviceId === svc.id);
       const item = proposalItems.find(pi => pi.serviceId === svc.id);
+      const bl = billingLabels[svc.billing] || 'Único';
+      const billingColor = svc.billing === 'monthly' ? 'accent-warning' : svc.billing === 'hourly' ? 'accent-secondary' : 'gray-500';
       return `
         <div class="flex items-center gap-2 py-1.5">
           <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleProposalService('${svc.id}', this.checked)" class="w-4 h-4 rounded accent-indigo-500 flex-shrink-0 cursor-pointer">
           <span class="flex-1 text-sm truncate ${isChecked ? 'text-white' : 'text-gray-400'}">${svc.name}</span>
+          <span class="text-[10px] bg-${billingColor}/20 text-${billingColor} px-1.5 py-0.5 rounded flex-shrink-0">${bl}</span>
           ${isChecked ? `
             <input type="number" value="${item.quantity}" min="1" onchange="updateProposalServiceQty('${svc.id}', this.value)" class="w-14 bg-dark-700 border border-dark-600 rounded px-2 py-1 text-xs text-center focus:outline-none focus:border-accent-primary">
             <input type="number" value="${item.price}" step="0.01" onchange="updateProposalServicePrice('${svc.id}', this.value)" class="w-24 bg-dark-700 border border-dark-600 rounded px-2 py-1 text-xs text-right focus:outline-none focus:border-accent-primary">
@@ -2934,20 +2945,23 @@ function previewProposal() {
       <div class="border-t border-dark-600 pt-6">
         <p class="text-xs text-gray-500 uppercase tracking-wider mb-3">Itens & Investimento</p>
         <table class="w-full text-sm">
-          <thead><tr class="text-gray-400 text-left"><th class="pb-2">Descrição</th><th class="pb-2 text-center w-16">Qtd</th><th class="pb-2 text-right w-28">Valor Unit.</th><th class="pb-2 text-right w-28">Subtotal</th></tr></thead>
+          <thead><tr class="text-gray-400 text-left"><th class="pb-2">Descrição</th><th class="pb-2 text-center w-20">Tipo</th><th class="pb-2 text-center w-16">Qtd</th><th class="pb-2 text-right w-28">Valor Unit.</th><th class="pb-2 text-right w-28">Subtotal</th></tr></thead>
           <tbody>
-            ${proposalItems.filter(item => item.description).map(item => `
+            ${proposalItems.filter(item => item.description).map(item => {
+              const billingLabel = item.billing === 'monthly' ? 'Mensal' : item.billing === 'hourly' ? '/hora' : 'Único';
+              return `
               <tr class="border-t border-dark-600">
                 <td class="py-2">${item.description}</td>
+                <td class="py-2 text-center"><span class="text-xs px-1.5 py-0.5 rounded ${item.billing === 'monthly' ? 'bg-yellow-500/20 text-yellow-400' : item.billing === 'hourly' ? 'bg-purple-500/20 text-purple-400' : 'bg-gray-500/20 text-gray-400'}">${billingLabel}</span></td>
                 <td class="py-2 text-center">${item.quantity}</td>
                 <td class="py-2 text-right">${formatCurrency(item.price)}</td>
                 <td class="py-2 text-right font-medium">${formatCurrency(item.quantity * item.price)}</td>
-              </tr>
-            `).join('')}
+              </tr>`;
+            }).join('')}
           </tbody>
           <tfoot>
             <tr class="border-t-2 border-accent-primary/30">
-              <td colspan="3" class="pt-3 text-right font-semibold">Total</td>
+              <td colspan="4" class="pt-3 text-right font-semibold">Total</td>
               <td class="pt-3 text-right text-lg font-bold text-accent-primary">${formatCurrency(total)}</td>
             </tr>
           </tfoot>
